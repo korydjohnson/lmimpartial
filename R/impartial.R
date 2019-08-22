@@ -1,56 +1,49 @@
 # impartialReg ---------------------------------------------------------------
 
 #' @name impartialReg
-#' @title Main function for Creating Impartial Regression Estimates
+#' @title Creating Impartial Regression Estimates
 #'
-#' @description The function impartialReg takes arguments for the response (y),
-#' sensitive covariates (S), legitimate covariates (X), and suspect covariates
-#' (W). Given these groupings, it creates impartial estimates according to
-#' group fairness. Note that W can include estimates from other models
-#' which are not constrained to be fair or impartial.
+#' @description The function lm_impartial takes a data frame or matrix as well
+#'   as a list specifying which columns correspond to various covariate groups:
+#'   response, sensitive, legitimate, and suspect. It then produces estimates of
+#'   the response which are impartial with respect to the sensitive covariates.
+#'   Note that W can include estimates from other models which are not
+#'   constrained to be fair or impartial.
 #'
 #' @details The order of the variables in the model is very important:
-#' lm(Y~S+X+W) vs lm(Y~S+W+X). R will keep the first variables and drop the
-#' latter if they are collinear. Therefore, if W = S + X, X is kept in the first
-#' model while W is kept in the second. However, this has a huge impact on the
-#' coefficient for S. In fairness cases, it is better to keep X, since this is
-#' treated as explaining variability, while W wont be. Therefore use Y~ S+X+W.
-#' Put S first because don't want to explain away S (and then drop it). But if
-#' explained by an X variable --> probably just means that it should be
-#' considered a legitimate variable. This can also cause problems because only
-#' need to subtract a component of W if it was actually used in the fitted
-#' value. Therefore, it is easier to write the fair estimate constructively or
-#' use the original procedure that used hat W in the full model and only removes
-#' the S term.
+#'   lm(Y~S+X+W) vs lm(Y~S+W+X). R will keep the first variables and drop the
+#'   latter if they are collinear. Therefore, if W = S + X, X is kept in the
+#'   first model while W is kept in the second. This can have a large impact on
+#'   the coefficient for S. In fairness cases, it is better to keep X, since
+#'   this is treated as legitimate variability, while W wont be. Therefore use
+#'   Y~S+X+W. For the predict function the data from which to predict does not
+#'   include an intercept column. Before computing predictions on new data, a
+#'   check for equivalent model matrices is made.
 #'
-#' @param theData matrix or data.frame of covariates.
-#' @return A list which includes the following components: \item{y}{response.}
-#'   \item{X}{model matrix from final model.} \item{formula}{final model
-#'   formula.}  \item{features}{list of interactions included in formula.}
-#'   \item{summary}{if save=TRUE, contains information on each test made by the
-#'   algorithm.} \item{time}{run time.} \item{options}{options given to RAI:
-#'   alg, searchType, poly, r, startDeg, alpha, omega, m.} \item{subData}{subset
-#'   of columns from theData that are used in the final model.}
-#'   \item{model}{linear model object using selected model} Summary and predict
-#'   methods are provided in order to generate further output and graphics.
+#' @param data matrix or data.frame of covariates.
+#' @param colList A list of named column specifications. List elements can
+#'   either be column numbers or column names. The data frame merely needs to be
+#'   able to be subsetted according to an element. colList includes some subset
+#'   of c("Y","S","X","W"). Note that an element named Y is always required.
+#' @param object an object of class impartialLM; expected to be the list output
+#'   from the lm_impartial function.
+#' @param newdata an optional data frame in which to look for variables with
+#'   which to predict. If omitted, the fitted values are used.
+#' @return A list which includes the following components:
+#'   \item{coeffWS}{coefficients from W~S+X; included in final output only if W
+#'   is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{fEst}{fair
+#'   estimates given colList.} \item{colList}{covariate groupings.}
+#'   \item{dataNames}{column names after transforming data; used for checking in
+#'   predict.impartialLM.}
+#'
 #' @examples
 #'   data("CO2")
-#'   theResponse = CO2$uptake
-#'   theData = CO2[ ,-5]
-#'   rai_out = rai(theData, theResponse)
-#'   summary(rai_out)  # summary information including graphs
+#'   colList = list("Y" = 5, "S" = 3, "X" = c(1,2,4))
+#'   lm_impartial(CO2, colList)
 #' @importFrom stats lm model.matrix pt qt resid var sd .lm.fit
 
 #' @export
-# Create the impartial model. The resulting object includes the appropriate
-# model coefficients, in-sample predictions, the colList specifications for
-# group membership, and the names of the expanded model matrix. colList is
-# included as this obviously needs to stay the same when calling the predict
-# function. It includes everything except raw data, which I didn't want to make
-# a copy of. The names are included to help model checking. colList includes
-# some subset of c("Y","S","X","W"). Note that an element named Y is always
-# required.
-makeImMod = function(data, colList) {
+lm_impartial = function(data, colList) {
   data = makeModelData(data, colList)
   dataNames = lapply(data, colnames)
   if (is.null(colList$W)) {  # only Y,S,X
@@ -69,40 +62,6 @@ makeImMod = function(data, colList) {
   class(fm) = "impartialLM"
   fm
 }
-
-################# Things to update
-# I need a better way of asking for predictions out of sample.
-# I think the best way to do this is probably to actually inherit methods from
-# standard s3 lm objects. My guess is that if I just store the appropriate
-# coefficients, that everything else will work out just fine. This would have the
-# benefit of allowing modeling dianostics and such.
-
-########## I actually need to think hard about how to do out of sample prediction.
-# The main problem is that my covariates have changed. Given a new observation,
-# I need to project the W component off of the S component... I don't know how to do that
-# with a single observation
-### really doing this is expectation. So the projection is x*cov(X)^-1*cor(X,W).
-# I use the training data to compute the cov and cor. Then plug in x from the observation?
-###### whoa whoa whoa, thinking about it way to hard. Know what the prediction of W is
-# using X in the new model. from that can get the new estimate hat w.
-
-####################### new function
-# The new function will produce an S3 object. The important
-# method it needs is predict. Either called without new data (giving fitted values)
-# or called with new data (giving new predictions). Note I then don't give a test
-# option
-#
-# In order to do these things it needs to save fitted values and coefficients.
-# coefficients are needed in both the model w ~ s + x and y ~ s + x + tilde w.
-# Instead of giving an option for YisW or whatever, just set
-# tildeW = \hat W + resid(W), where resid is from the lm fit for w ~ .
-# It saves more information, but not a ridi# fm gives final output, fmw is intermediate model W~S+culous amount more, just to save both
-# linear model objects. This only gets inefficient when X is huge. set model=FALSE
-# in order to not save the raw data used.
-
-# Inside the function there will be s3 objects. These objects are actually just
-# coefficient vectors with an associated predict method. When predict is called
-# on the coefficient vector, is gives the appropriate estimate.
 
 # First, a helper function for transforming the data to model matrices. This
 # also separates the single data frame into a list with named components. Note
@@ -125,15 +84,12 @@ makeModelData = function(data, colList) {
   data
 }
 
-# Core lm function: theResponse with either be y or W depending on how the
-# function is called
-# coeffWS correspond to W~S+X; included in final output only if W is included
+# Core function: theResponse is either Y or W
 feoMod = function(data, theResponse) {
   fm = list()
   mod = lm(as.formula(paste(theResponse,"~S+X")), data)  # full model
   indS = 1+1:dim(data$S)[2]
   indX = setdiff(1:(1+dim(data$S)[2]+dim(data$X)[2]), indS)  # intercept & X
-
   if (dim(data[[theResponse]])[2] > 1) {  # coefficients are in a matrix
     fm$coeffWS = mod$coefficients[indS,]
     fm$coeffX = mod$coefficients[indX,]
@@ -146,11 +102,6 @@ feoMod = function(data, theResponse) {
   fm$fEst = cbind(1,data$X)%*%fm$coeffX
   fm
 }
-
-# When called without new data, __predict_im__ just returns the estimates from
-# the training model. Note that the data from which to predict does *not*
-# include an intercept column. Before computing predictions on new data, a check
-# for equivalent model matrices is made.
 
 #' @name impartialReg
 #' @export
