@@ -16,7 +16,7 @@
 #'   first model while W is kept in the second. This can have a large impact on
 #'   the coefficient for S. In fairness cases, it is better to keep X, since
 #'   this is treated as legitimate variability, while W wont be. Therefore use
-#'   Y~S+X+W. For the predict function the data from which to predict does not
+#'   Y~S+X+W. For the predict function, the data from which to predict does not
 #'   include an intercept column. Before computing predictions on new data, a
 #'   check for equivalent model matrices is made.
 #'
@@ -50,11 +50,10 @@ lm_impartial = function(data, colList) {
     fm = feoMod(data, theResponse="Y")
     fm$coeffWS = NULL
   } else {
-    # fm gives final output, fmw is intermediate model W~S+X
-    fmw = feoMod(data, theResponse="W")
+    fmw = feoMod(data, theResponse="W")  # fmw is intermediate model W~S+X
     tildeW = with(data, W - S%*%fmw$coeffWS)
     data$X = cbind(data$X,tildeW)
-    fm = feoMod(data, theResponse="Y")
+    fm = feoMod(data, theResponse="Y")  # fm gives final output
     fm$coeffWS = fmw$coeffWS
   }
   fm$colList = colList
@@ -69,6 +68,7 @@ lm_impartial = function(data, colList) {
 # will be dropped in model fitting.
 makeModelData = function(data, colList) {
   if (is.null(colList$Y)) stop("A column specification for Y is required.")
+  if (is.null(colList$S) && !is.null(colList$W)) stop("Cannot have W without S.")
   n = nrow(data)
   dataGroups = c("Y","S","X","W")
   data = lapply(dataGroups,
@@ -88,17 +88,17 @@ makeModelData = function(data, colList) {
 feoMod = function(data, theResponse) {
   fm = list()
   mod = lm(as.formula(paste(theResponse,"~S+X")), data)  # full model
-  indS = 1+1:dim(data$S)[2]
-  indX = setdiff(1:(1+dim(data$S)[2]+dim(data$X)[2]), indS)  # intercept & X
-  if (dim(data[[theResponse]])[2] > 1) {  # coefficients are in a matrix
+  indS = 1+1:ncol(data$S)
+  indX = setdiff(1:(1+ncol(data$S)+ncol(data$X)), indS)  # intercept & X
+  if (ncol(data[[theResponse]]) > 1) {  # coefficients are in a matrix
     fm$coeffWS = mod$coefficients[indS,]
     fm$coeffX = mod$coefficients[indX,]
   } else {  # coefficients are in a vector
     fm$coeffWS = mod$coefficients[indS]
     fm$coeffX = mod$coefficients[indX]
   }
-  fm$coeffX[is.na(fm$coeffX)] = 0 # NA for collinear/dropped variables
-  fm$coeffWS[is.na(fm$coeffWS)] = 0 # NA for collinear/dropped variables
+  fm$coeffX[is.na(fm$coeffX)] = 0  # NA for collinear/dropped variables
+  fm$coeffWS[is.na(fm$coeffWS)] = 0  # NA for collinear/dropped variables
   fm$fEst = cbind(1,data$X)%*%fm$coeffX
   fm
 }
@@ -110,7 +110,10 @@ predict.impartialLM = function(object, newdata=NULL) {
   if (is.null(newdata)) {
     fEst = fm$fEst
   } else {
-    if (max(unlist(fm$colList)) > ncol(newdata)) stop("Data & colList mismatch.")
+    # check that all elements in colList are actually columns
+    c1 = max(unlist(fm$colList)) > ncol(newdata)  # if string, returns T
+    c2 = all(unlist(fm$colList) %in% colnames(newdata))
+    if (max(unlist(fm$colList)) > ncol(newdata)) stop("newdata & colList mismatch.")
     newdata = makeModelData(newdata, fm$colList)
     newNames = lapply(newdata, colnames)
     if (!identical(newNames, fm$dataNames)) {

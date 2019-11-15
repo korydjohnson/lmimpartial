@@ -1,13 +1,19 @@
 Package: impartialReg
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Impartial Estimates Using Linear Regression
+Version: 1.0.1
+Authors@R: c(
+    person("Kory D.", "Johnson", email = "korydjohnson@gmail.com", role = c("aut", "cre")),
+    )
+Description: Given a covariate groups for sensitive, legitimate, and suspect covariates,
+    produces estimates that are impartial with respect to the sensitive group.
+    For more information, see 
+    Johnson, Stine, and Foster (2019) <arXiv:1510.06322>.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
+URL: https://github.com/korydjohnson/impartialReg
+BugReports: https://github.com/korydjohnson/rai/impartialReg
 Suggests: 
     testthat
+RoxygenNote: 6.1.1
