@@ -17,29 +17,35 @@
 #'   the coefficient for S. In fairness cases, it is better to keep X, since
 #'   this is treated as legitimate variability, while W wont be. Therefore use
 #'   Y~S+X+W. For the predict function, the data from which to predict does not
-#'   include an intercept column. Before computing predictions on new data, a
-#'   check for equivalent model matrices is made.
+#'   include an intercept column. Before computing predictions on newdata, a
+#'   check for equivalent model matrices is made. This requires column names in
+#'   newdata to match those of the original data. Factors columns also need to
+#'   include levels for all categories else equivalent model matrices will not
+#'   be created.
 #'
 #' @param data matrix or data.frame of covariates.
 #' @param colList A list of named column specifications. List elements can
 #'   either be column numbers or column names. The data frame merely needs to be
-#'   able to be subsetted according to an element. colList includes some subset
-#'   of c("Y","S","X","W"). Note that an element named Y is always required.
+#'   able to be subset according to an element of this list. colList includes
+#'   some subset of c("Y","S","X","W"). An element named Y is always required,
+#'   and must have S if include W.
 #' @param object an object of class impartialLM; expected to be the list output
 #'   from the lm_impartial function.
-#' @param newdata an optional data frame in which to look for variables with
-#'   which to predict. If omitted, the fitted values are used.
+#' @param newdata an optional matrix or data frame in which to look for
+#'   variables with which to predict. If omitted, the fitted values are used.
 #' @return A list which includes the following components:
 #'   \item{coeffWS}{coefficients from W~S+X; included in final output only if W
-#'   is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{fEst}{fair
+#'   is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{iEst}{impartial
 #'   estimates given colList.} \item{colList}{covariate groupings.}
 #'   \item{dataNames}{column names after transforming data; used for checking in
 #'   predict.impartialLM.}
 #'
 #' @examples
-#'   data("CO2")
-#'   colList = list("Y" = 5, "S" = 3, "X" = c(1,2,4))
-#'   lm_impartial(CO2, colList)
+#'   data(swiss)
+#'   colList1 = list("Y" = 1, "S" = 5, "X" = setdiff(1:6, c(1,5)))
+#'   lmOut1 = lm_impartial(swiss, colList1)
+#'   colList2 = list("Y" = 1, "S" = 5, "X" = setdiff(1:6, c(1,4,5)), "W" = 4)
+#'   lmOut2 = lm_impartial(swiss, colList2)
 #' @importFrom stats lm model.matrix pt qt resid var sd .lm.fit
 
 #' @export
@@ -47,19 +53,19 @@ lm_impartial = function(data, colList) {
   data = makeModelData(data, colList)
   dataNames = lapply(data, colnames)
   if (is.null(colList$W)) {  # only Y,S,X
-    fm = feoMod(data, theResponse="Y")
-    fm$coeffWS = NULL
+    im = feoMod(data, theResponse="Y")
+    im$coeffWS = NULL
   } else {
-    fmw = feoMod(data, theResponse="W")  # fmw is intermediate model W~S+X
-    tildeW = with(data, W - S%*%fmw$coeffWS)
+    imw = feoMod(data, theResponse="W")  # imw is intermediate model W~S+X
+    tildeW = with(data, W - S%*%imw$coeffWS)
     data$X = cbind(data$X,tildeW)
-    fm = feoMod(data, theResponse="Y")  # fm gives final output
-    fm$coeffWS = fmw$coeffWS
+    im = feoMod(data, theResponse="Y")  # im gives final output
+    im$coeffWS = imw$coeffWS
   }
-  fm$colList = colList
-  fm$dataNames = dataNames
-  class(fm) = "impartialLM"
-  fm
+  im$colList = colList
+  im$dataNames = dataNames
+  class(im) = "impartialLM"
+  im
 }
 
 # First, a helper function for transforming the data to model matrices. This
@@ -86,46 +92,46 @@ makeModelData = function(data, colList) {
 
 # Core function: theResponse is either Y or W
 feoMod = function(data, theResponse) {
-  fm = list()
+  im = list()
   mod = lm(as.formula(paste(theResponse,"~S+X")), data)  # full model
   indS = 1+1:ncol(data$S)
   indX = setdiff(1:(1+ncol(data$S)+ncol(data$X)), indS)  # intercept & X
   if (ncol(data[[theResponse]]) > 1) {  # coefficients are in a matrix
-    fm$coeffWS = mod$coefficients[indS,]
-    fm$coeffX = mod$coefficients[indX,]
+    im$coeffWS = mod$coefficients[indS,]
+    im$coeffX = mod$coefficients[indX,]
   } else {  # coefficients are in a vector
-    fm$coeffWS = mod$coefficients[indS]
-    fm$coeffX = mod$coefficients[indX]
+    im$coeffWS = mod$coefficients[indS]
+    im$coeffX = mod$coefficients[indX]
   }
-  fm$coeffX[is.na(fm$coeffX)] = 0  # NA for collinear/dropped variables
-  fm$coeffWS[is.na(fm$coeffWS)] = 0  # NA for collinear/dropped variables
-  fm$fEst = cbind(1,data$X)%*%fm$coeffX
-  fm
+  im$coeffX[is.na(im$coeffX)] = 0  # NA for collinear/dropped variables
+  im$coeffWS[is.na(im$coeffWS)] = 0  # NA for collinear/dropped variables
+  im$iEst = cbind(1,data$X)%*%im$coeffX
+  im
 }
 
 #' @name impartialReg
 #' @export
 predict.impartialLM = function(object, newdata=NULL) {
-  fm = object
+  im = object
   if (is.null(newdata)) {
-    fEst = fm$fEst
+    iEst = im$iEst
   } else {
     # check that all elements in colList are actually columns
-    c1 = max(unlist(fm$colList)) > ncol(newdata)  # if string, returns T
-    c2 = all(unlist(fm$colList) %in% colnames(newdata))
-    if (max(unlist(fm$colList)) > ncol(newdata)) stop("newdata & colList mismatch.")
-    newdata = makeModelData(newdata, fm$colList)
+    c1 = max(unlist(im$colList)) > ncol(newdata)  # if string, returns T
+    c2 = all(unlist(im$colList) %in% colnames(newdata))
+    if (max(unlist(im$colList)) > ncol(newdata)) stop("newdata & colList mismatch.")
+    newdata = makeModelData(newdata, im$colList)
     newNames = lapply(newdata, colnames)
-    if (!identical(newNames, fm$dataNames)) {
+    if (!identical(newNames, im$dataNames)) {
       stop("Names for new data do not match those of training data.")
     }
-    if (is.null(fm$coeffWS)) {  # model doesn't include W
-      fEst = cbind(1, newdata$X)%*%fm$coeffX
+    if (is.null(im$coeffWS)) {  # model doesn't include W
+      iEst = cbind(1, newdata$X)%*%im$coeffX
     }
     else {
-      tildeW = with(newdata, W - S%*%fm$coeffWS)
-      fEst = cbind(1, newdata$X, tildeW)%*%fm$coeffX
+      tildeW = with(newdata, W - S%*%im$coeffWS)
+      iEst = cbind(1, newdata$X, tildeW)%*%im$coeffX
     }
   }
-  fEst
+  iEst
 }

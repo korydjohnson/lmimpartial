@@ -2,13 +2,16 @@ Package: impartialReg
 Type: Package
 Title: Impartial Estimates Using Linear Regression
 Version: 1.0.1
-Authors@R: c(
-    person("Kory D.", "Johnson", email = "korydjohnson@gmail.com", role = c("aut", "cre")),
-    )
-Description: Given a covariate groups for sensitive, legitimate, and suspect covariates,
-    produces estimates that are impartial with respect to the sensitive group.
+Authors@R: person("Kory D.", "Johnson", email = "korydjohnson@gmail.com", role = c("aut", "cre"))
+Description: Fairness aware data mining (FADM) aims to prevent algorithms from discriminating 
+    against protected groups. We operationalize fairness in statistical modeling by 
+    requiring covariates to be separated into sensitive, legitimate, and suspect groups.
+    Given such a grouping, we provide estimate which are "impartial" with respect to the
+    sensitive covariates. This framework yields a set of impartial estimates that are
+    applicable in a wide variety of situations and post-processing tools to correct 
+    estimates from arbitrary models by including them as suspect covariates.
     For more information, see 
-    Johnson, Stine, and Foster (2019) <arXiv:1510.06322>.
+    Johnson, Foster, and Stine <arXiv:1608.00528>.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

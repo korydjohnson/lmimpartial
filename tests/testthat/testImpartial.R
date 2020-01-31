@@ -46,65 +46,71 @@ test_that("makeModelData", {
 
 test_that("feo_YSXW", {   # lm w ~ s x, est w; then y ~ hat w s x, est y
   # vector
-  fm = lm_impartial(data1, colList1)
-  est1 = predict(fm)
+  im = lm_impartial(data1, colList1)
+  est1 = predict(im)
+  est2 = predict(im, data1)
   theData1 = makeModelData(data1, colList1)
   modW = lm(W~S+X, theData1)  # full model
   theData1$estW = theData1$W - theData1$S %*% modW$coefficients[2]
   modY = lm(Y~S+X+estW, theData1)
-  est2 = cbind(1, theData1$X, theData1$estW)%*%modY$coefficients[c(1, 3, 4)]
-  expect_equal(est1, est2)
+  est3 = cbind(1, theData1$X, theData1$estW)%*%modY$coefficients[c(1, 3, 4)]
+  expect_equal(est1, est2, est3)
 
   # matrix
-  fm = lm_impartial(data2, colList2)
-  est1 = predict(fm)
+  im = lm_impartial(data2, colList2)
+  est1 = predict(im)
+  est2 = predict(im, data2)
   theData2 = makeModelData(data2, colList2)
   modW = lm(W~S+X, theData2)  # full model
   theData2$estW = theData2$W - theData2$S %*% modW$coefficients[c(2,3),]
   modY = lm(Y~S+X+estW, theData2)
-  est2 = cbind(1, theData2$X, theData2$estW)%*%modY$coefficients[c(1, 4:7)]
-  expect_equal(est1, est2)
+  est3 = cbind(1, theData2$X, theData2$estW)%*%modY$coefficients[c(1, 4:7)]
+  expect_equal(est1, est2, est3)
 
   # factor
-  fm = lm_impartial(data2.2, colList2)
-  est1 = predict(fm)
+  im = lm_impartial(data2.2, colList2)
+  est1 = predict(im)
+  est2 = predict(im, data2.2)
   theData2.2 = makeModelData(data2.2, colList2)
   modW = lm(W~S+X, theData2.2)  # full model
   theData2.2$estW = theData2.2$W - theData2.2$S %*% rbind(modW$coefficients[c(2,3),],0)
   modY = lm(Y~S+X+estW, theData2.2)
-  est2 = cbind(1, theData2.2$X, theData2.2$estW)%*%modY$coefficients[c(1, 5:8)]
-  expect_equal(est1, est2)
+  est3 = cbind(1, theData2.2$X, theData2.2$estW)%*%modY$coefficients[c(1, 5:8)]
+  expect_equal(est1, est2, est3)
 })
 
 test_that("seo_YSW", {
   # vector
-  fm = lm_impartial(data1, colList1[c(1,2,4)])
-  est1 = predict(fm)
+  im = lm_impartial(data1, colList1[c(1,2,4)])
+  est1 = predict(im)
+  est2 = predict(im, data1)
   theData1 = makeModelData(data1, colList1[c(1,2,4)])
   modW = lm(W~S, theData1)
   theData1$estW = theData1$W - theData1$S %*% modW$coefficients[2]
   modY = lm(Y~S+estW, theData1)
-  est2 = cbind(1, theData1$estW)%*%modY$coefficients[c(1, 3)]
-  expect_equal(est1, est2)
+  est3 = cbind(1, theData1$estW)%*%modY$coefficients[c(1, 3)]
+  expect_equal(est1, est2, est3)
 
   # matrix
-  fm = lm_impartial(data2, colList2[c(1,2,4)])
-  est1 = predict(fm)
+  im = lm_impartial(data2, colList2[c(1,2,4)])
+  est1 = predict(im)
+  est2 = predict(im, data2)
   theData2 = makeModelData(data2, colList2[c(1,2,4)])
   modW = lm(W~S, theData2)  # full model
   theData2$estW = theData2$W - theData2$S %*% modW$coefficients[c(2,3),]
   modY = lm(Y~S+estW, theData2)
-  est2 = cbind(1, theData2$estW)%*%modY$coefficients[c(1, 4:5)]
-  expect_equal(est1, est2)
+  est3 = cbind(1, theData2$estW)%*%modY$coefficients[c(1, 4:5)]
+  expect_equal(est1, est2, est3)
 
   # factor
-  fm = lm_impartial(data2.2, colList2[c(1,2,4)])
-  est1 = predict(fm)
+  im = lm_impartial(data2.2, colList2[c(1,2,4)])
+  est1 = predict(im)
+  est2 = predict(im, data2.2)
   theData2.2 = makeModelData(data2.2, colList2[c(1,2,4)])
   modW = lm(W~S, theData2.2)  # full model
   theData2.2$estW = theData2.2$W - theData2.2$S %*% rbind(modW$coefficients[c(2,3),],0)
   modY = lm(Y~S+estW, theData2.2)
-  est2 = cbind(1, theData2.2$estW)%*%modY$coefficients[c(1, 5:6)]
-  expect_equal(est1, est2)
+  est3 = cbind(1, theData2.2$estW)%*%modY$coefficients[c(1, 5:6)]
+  expect_equal(est1, est2, est3)
 })
 
