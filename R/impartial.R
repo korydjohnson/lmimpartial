@@ -35,7 +35,7 @@
 #'   variables with which to predict. If omitted, the fitted values are used.
 #' @return A list which includes the following components:
 #'   \item{coeffWS}{coefficients from W~S+X; included in final output only if W
-#'   is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{iEst}{impartial
+#'   is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{imEst}{impartial
 #'   estimates given colList.} \item{colList}{covariate groupings.}
 #'   \item{dataNames}{column names after transforming data; used for checking in
 #'   predict.impartialLM.}
@@ -105,7 +105,7 @@ feoMod = function(data, theResponse) {
   }
   im$coeffX[is.na(im$coeffX)] = 0  # NA for collinear/dropped variables
   im$coeffWS[is.na(im$coeffWS)] = 0  # NA for collinear/dropped variables
-  im$iEst = cbind(1,data$X)%*%im$coeffX
+  im$imEst = cbind(1,data$X)%*%im$coeffX
   im
 }
 
@@ -114,7 +114,7 @@ feoMod = function(data, theResponse) {
 predict.impartialLM = function(object, newdata=NULL) {
   im = object
   if (is.null(newdata)) {
-    iEst = im$iEst
+    imEst = im$imEst
   } else {
     # check that all elements in colList are actually columns
     c1 = max(unlist(im$colList)) > ncol(newdata)  # if string, returns T
@@ -126,12 +126,12 @@ predict.impartialLM = function(object, newdata=NULL) {
       stop("Names for new data do not match those of training data.")
     }
     if (is.null(im$coeffWS)) {  # model doesn't include W
-      iEst = cbind(1, newdata$X)%*%im$coeffX
+      imEst = cbind(1, newdata$X)%*%im$coeffX
     }
     else {
       tildeW = with(newdata, W - S%*%im$coeffWS)
-      iEst = cbind(1, newdata$X, tildeW)%*%im$coeffX
+      imEst = cbind(1, newdata$X, tildeW)%*%im$coeffX
     }
   }
-  iEst
+  imEst
 }

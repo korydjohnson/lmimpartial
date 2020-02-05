@@ -16,19 +16,19 @@ lm_impartial(data, colList)
 \item{colList}{A list of named column specifications. List elements can
 either be column numbers or column names. The data frame merely needs to be
 able to be subset according to an element of this list. colList includes
-some subset of c("Y","S","X","W"). An element named Y is always required, and
-must have S if include W.}
+some subset of c("Y","S","X","W"). An element named Y is always required,
+and must have S if include W.}
 
 \item{object}{an object of class impartialLM; expected to be the list output
 from the lm_impartial function.}
 
-\item{newdata}{an optional matrix or data frame in which to look for variables with
-which to predict. If omitted, the fitted values are used.}
+\item{newdata}{an optional matrix or data frame in which to look for
+variables with which to predict. If omitted, the fitted values are used.}
 }
 \value{
 A list which includes the following components:
   \item{coeffWS}{coefficients from W~S+X; included in final output only if W
-  is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{fEst}{fair
+  is included.} \item{coeffX}{coefficients from Y~S+X+W.} \item{imEst}{impartial
   estimates given colList.} \item{colList}{covariate groupings.}
   \item{dataNames}{column names after transforming data; used for checking in
   predict.impartialLM.}
@@ -49,8 +49,11 @@ The order of the variables in the model is very important:
   the coefficient for S. In fairness cases, it is better to keep X, since
   this is treated as legitimate variability, while W wont be. Therefore use
   Y~S+X+W. For the predict function, the data from which to predict does not
-  include an intercept column. Before computing predictions on new data, a
-  check for equivalent model matrices is made.
+  include an intercept column. Before computing predictions on newdata, a
+  check for equivalent model matrices is made. This requires column names in
+  newdata to match those of the original data. Factors columns also need to
+  include levels for all categories else equivalent model matrices will not
+  be created.
 }
 \examples{
   data(swiss)
