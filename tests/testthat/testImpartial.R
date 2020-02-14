@@ -1,5 +1,5 @@
 context("Impartial Linear Models")
-library(impartialReg)
+library(lmimpartial)
 
 # set up ------------------------------------------------------------------
 n = 100

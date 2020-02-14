@@ -1,22 +1,21 @@
-Package: impartialReg
+Package: lmimpartial
 Type: Package
 Title: Impartial Estimates Using Linear Regression
 Version: 1.0.1
 Authors@R: person("Kory D.", "Johnson", email = "korydjohnson@gmail.com", role = c("aut", "cre"))
-Description: Fairness aware data mining (FADM) aims to prevent algorithms from discriminating 
-    against protected groups. We operationalize fairness in statistical modeling by 
-    requiring covariates to be separated into sensitive, legitimate, and suspect groups.
+Description: Fairness aware data mining aims to prevent algorithms from discriminating 
+    against protected groups. Enforcing fairness in statistical modeling requires 
+    covariates to be separated into sensitive, legitimate, and suspect groups.
     Given such a grouping, we provide estimate which are "impartial" with respect to the
     sensitive covariates. This framework yields a set of impartial estimates that are
     applicable in a wide variety of situations and post-processing tools to correct 
     estimates from arbitrary models by including them as suspect covariates.
-    For more information, see 
-    Johnson, Foster, and Stine <arXiv:1608.00528>.
+    For more information, see Johnson, Foster, and Stine <arXiv:1608.00528>.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/korydjohnson/impartialReg
-BugReports: https://github.com/korydjohnson/rai/impartialReg
-Suggests: 
-    testthat
+URL: https://github.com/korydjohnson/lmimpartial
+BugReports: https://github.com/korydjohnson/lmimpartial
+Suggests:
+    testthat 
 RoxygenNote: 7.0.2
