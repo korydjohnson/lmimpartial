@@ -7,7 +7,7 @@
 \usage{
 lm_impartial(theData, colList)
 
-\method{predict}{lm_impartial}(object, newdata = NULL)
+\method{predict}{lm_impartial}(object, newdata = NULL, ...)
 }
 \arguments{
 \item{theData}{matrix or data.frame.}
@@ -23,6 +23,8 @@ from the lm_impartial function.}
 
 \item{newdata}{an optional matrix or data frame in which to look for
 variables with which to predict. If omitted, the fitted values are used.}
+
+\item{...}{further arguments passed to or from other methods.}
 }
 \value{
 A list which includes the following components:

@@ -30,6 +30,7 @@
 #'   from the lm_impartial function.
 #' @param newdata an optional matrix or data frame in which to look for
 #'   variables with which to predict. If omitted, the fitted values are used.
+#' @param ... further arguments passed to or from other methods.
 #' @return A list which includes the following components:
 #'   \item{coeffWS}{coefficients from W~S+X; included in final output only if W
 #'   is included.} \item{coeffX}{coefficients from Y~S+X+W.}
@@ -108,7 +109,7 @@ feoMod = function(theData, theResponse) {
 
 #' @name lm_impartial
 #' @export
-predict.lm_impartial = function(object, newdata=NULL) {
+predict.lm_impartial = function(object, newdata=NULL, ...) {
   im = object
   if (is.null(newdata)) {
     imEst = im$imEst
