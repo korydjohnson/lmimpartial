@@ -67,8 +67,8 @@ lm_impartial = function(theData, colList) {
 }
 
 # First, a helper function for transforming the theData to model matrices. This
-# also separates the single theData frame into a list with named components. Note
-# that empty components are just turned into duplicates of the intercept and
+# also separates the single theData data frame into a list with named components.
+# Note that empty components are just turned into duplicates of the intercept and
 # will be dropped in model fitting.
 makeModelData = function(theData, colList) {
   if (is.null(colList$Y)) stop("A column specification for Y is required.")

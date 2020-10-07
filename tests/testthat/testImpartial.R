@@ -44,6 +44,13 @@ test_that("makeModelData", {
   expect_equal(cor(theData2.2$S), cor(model.matrix(~.-1, data=S2)))
 })
 
+test_that("YX", {  # estimates should match regular linear model
+  im = lm_impartial(data2, colList = list("Y"=1, "X" = c(4,5)))
+  lmOut = lm(y~x1+x2, data=data2)
+  expect_equal(sum(abs(im$coeffX-lmOut$coefficients)), 0)
+  expect_equal(sd(data2$y-im$imEst), sd(data2$y - lmOut$fitted.values))
+})
+
 test_that("feo_YSXW", {   # lm w ~ s x, est w; then y ~ hat w s x, est y
   # vector
   im = lm_impartial(data1, colList1)
